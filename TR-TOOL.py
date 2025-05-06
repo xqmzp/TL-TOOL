@@ -9,14 +9,15 @@ import speedtest as speedtestcli
 import requests
 
 # Farben für Konsole
-R = '\033[91m'
-G = '\033[92m'
-Y = '\033[93m'
-B = '\033[94m'
-C = '\033[96m'
-W = '\033[0m'
+R = '\033[91m'  # Rot
+G = '\033[92m'  # Grün
+Y = '\033[93m'  # Gelb
+B = '\033[94m'  # Blau
+C = '\033[96m'  # Cyan
+W = '\033[0m'   # Weiß (Reset)
 
-def clear(): os.system('cls' if os.name == 'nt' else 'clear')
+def clear():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 def banner():
     print(f"""{R}
@@ -24,8 +25,8 @@ def banner():
 ╚══██╔══╝██╔══██╗  ╚══██╔══╝██╔══██╗██╔══██╗██║░░░░░
 ░░░██║░░░██████╦╝  ░░░██║░░░██║░░██║██║░░██║██║░░░░░
 ░░░██║░░░██╔══██╗  ░░░██║░░░██║░░██║██║░░██║██║░░░░░
-░░░██║░░░██    █╦╝  ░░░██║░░░╚█████╔╝╚█████╔╝███████╗
-░░░╚═╝░░░╚═════╝   ░░░╚═╝░░░░╚════╝░░╚════╝░╚══════╝
+░░░██║░░░██║░░██║  ░░░██║░░░╚█████╔╝╚█████╔╝███████╗
+░░░╚═╝░░░╚═╝░░╚═╝  ░░░╚═╝░░░░╚════╝░░╚════╝░╚══════╝
 {W}
 {R}Coded by IsaTR{W}
 {Y}Version: 1               {C}CTRL+C to exit               {W}Author: IsaTR
@@ -45,21 +46,23 @@ def menu():
 [10] Zufälliger User-Agent
 [11] Datei-Hasher (SHA256)
 [12] HTTP-Header einer Website
-[13] Zufälliges Zitat
-[14] Öffentliche IP anzeigen
+[13] Öffentliche IP anzeigen
+[14] IP-Locator
 [15] Beenden
 {W}""")
 
-# Funktionen
+# Tool-Funktionen
 
 def ip_scanner():
     ip = input("Gib eine IP ein: ")
-    print(f"Pinge {ip} ...")
-    os.system(f"ping {ip}")
+    print(f"Pinge {ip} ...\n")
+    os.system(f"ping -n 4 {ip}" if os.name == "nt" else f"ping -c 4 {ip}")
 
 def port_scanner():
     target = input("Gib eine IP oder Domain ein: ")
-    for port in [21, 22, 80, 443, 8080]:
+    ports = [21, 22, 80, 443, 8080]
+    print(f"Scanne Ports bei {target} ...\n")
+    for port in ports:
         try:
             sock = socket.socket()
             sock.settimeout(1)
@@ -80,12 +83,16 @@ def qr_generator():
     print("QR-Code gespeichert als qrcode.png")
 
 def password_generator():
-    length = int(input("Länge des Passworts: "))
-    characters = string.ascii_letters + string.digits + string.punctuation
-    pw = ''.join(random.choice(characters) for _ in range(length))
-    print("Generiertes Passwort:", pw)
+    try:
+        length = int(input("Länge des Passworts: "))
+        characters = string.ascii_letters + string.digits + string.punctuation
+        pw = ''.join(random.choice(characters) for _ in range(length))
+        print("Generiertes Passwort:", pw)
+    except:
+        print("Ungültige Eingabe!")
 
 def speed_test():
+    print("Starte Speedtest ...")
     st = speedtestcli.Speedtest()
     print("Download:", round(st.download() / 1_000_000, 2), "Mbps")
     print("Upload:  ", round(st.upload() / 1_000_000, 2), "Mbps")
@@ -93,7 +100,7 @@ def speed_test():
 def site_status():
     site = input("Website URL (mit http/https): ")
     try:
-        r = requests.get(site)
+        r = requests.get(site, timeout=5)
         print(f"Status Code: {r.status_code}")
     except Exception as e:
         print(f"Fehler: {e}")
@@ -132,18 +139,11 @@ def file_hasher():
 def get_headers():
     url = input("Website-URL: ")
     try:
-        r = requests.get(url)
+        r = requests.get(url, timeout=5)
         for k, v in r.headers.items():
             print(f"{k}: {v}")
     except Exception as e:
         print(f"Fehler: {e}")
-
-def quote():
-    try:
-        r = requests.get("https://api.quotable.io/random").json()
-        print(f"{r['content']} — {r['author']}")
-    except:
-        print("Fehler beim Abrufen des Zitats.")
 
 def public_ip():
     try:
@@ -152,38 +152,59 @@ def public_ip():
     except:
         print("Fehler beim Abrufen der IP.")
 
-# Hauptprogramm
-
-while True:
+def iplocater():
     try:
-        clear()
-        banner()
-        menu()
-        choice = input("Wähle eine Option (1-15): ")
-        clear()
-        banner()
-        funcs = {
-            "1": ip_scanner,
-            "2": port_scanner,
-            "3": hash_generator,
-            "4": qr_generator,
-            "5": password_generator,
-            "6": speed_test,
-            "7": site_status,
-            "8": host_to_ip,
-            "9": ip_to_host,
-            "10": random_user_agent,
-            "11": file_hasher,
-            "12": get_headers,
-            "13": quote,
-            "14": public_ip,
-            "15": sys.exit
-        }
-        if choice in funcs:
-            funcs[choice]()
+        ip = input("IP-Adresse eingeben: ")
+        response = requests.get(f"http://ip-api.com/json/{ip}")
+        data = response.json()
+        if data['status'] == 'success':
+            print(f"Land: {data['country']}")
+            print(f"Region: {data['regionName']}")
+            print(f"Stadt: {data['city']}")
+            print(f"ISP: {data['isp']}")
+            print(f"Organisation: {data['org']}")
+            print(f"Koordinaten: {data['lat']}, {data['lon']}")
         else:
-            print("Ungültige Auswahl")
-        input(f"\n{Y}Drücke Enter für Menü...{W}")
-    except KeyboardInterrupt:
-        print(f"\n{R}Manuell beendet.{W}")
-        sys.exit()
+            print("Fehler: IP nicht gefunden.")
+    except Exception as e:
+        print(f"Fehler beim Abrufen: {e}")
+
+# Main Loop
+
+def main():
+    while True:
+        try:
+            clear()
+            banner()
+            menu()
+            choice = input("Wähle eine Option (1-15): ").strip()
+            clear()
+            banner()
+            funcs = {
+                "1": ip_scanner,
+                "2": port_scanner,
+                "3": hash_generator,
+                "4": qr_generator,
+                "5": password_generator,
+                "6": speed_test,
+                "7": site_status,
+                "8": host_to_ip,
+                "9": ip_to_host,
+                "10": random_user_agent,
+                "11": file_hasher,
+                "12": get_headers,
+                "13": public_ip,
+                "14": iplocater,
+                "15": sys.exit
+            }
+            if choice in funcs:
+                funcs[choice]()
+            else:
+                print("Ungültige Auswahl!")
+            input(f"\n{Y}Drücke Enter für Menü...{W}")
+        except KeyboardInterrupt:
+            print(f"\n{R}Manuell beendet.{W}")
+            sys.exit()
+
+if __name__ == "__main__":
+    main()
